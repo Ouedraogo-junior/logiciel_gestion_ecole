@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('echeances', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('type_frais_id')->constrained('types_frais')->cascadeOnDelete();
+            $table->string('nom');
+            $table->decimal('montant', 10, 2);
+            $table->date('date_echeance')->nullable();
+            $table->integer('ordre')->default(0);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('echeances');
+    }
+};
