@@ -8,9 +8,10 @@ import { useClasses } from '../hooks/useClasses';
 import { useMatieres } from '../hooks/useMatieres';
 import { usePeriodes } from '../hooks/usePeriodes';
 import { useTypesEvaluation } from '../hooks/useTypesEvaluation';
-import { useAffectations } from '../hooks/useAffectations';
+import { useMesAffectationsEffectives } from '../hooks/useMesAffectationsEffectives';
 import { useEleves } from '../hooks/useEleves';
 import { getAppreciation } from '../utils/appreciation';
+import { nomAffichage } from '../utils/nom';
 import { nettoyerSaisieNombre, nombreDepuisTexte } from '../utils/nombre';
 
 interface NoteExistante {
@@ -31,7 +32,7 @@ export default function SaisieNotes() {
   const { matieres: toutesLesMatieres } = useMatieres();
   const { periodes } = usePeriodes(anneeActive?.id);
   const { typesEvaluation } = useTypesEvaluation();
-  const { affectations } = useAffectations(estEnseignant ? user?.id : undefined);
+  const { classesMatieres } = useMesAffectationsEffectives(estEnseignant);
 
   const [classeId, setClasseId] = useState('');
   const [matiereId, setMatiereId] = useState('');
@@ -50,11 +51,11 @@ export default function SaisieNotes() {
   }
 
   const classesDisponibles = estEnseignant
-    ? Array.from(new Map(affectations.map((a) => [a.classe.id, a.classe])).values())
+    ? classesMatieres.map((cm) => cm.classe)
     : toutesLesClasses;
 
   const matieresDisponibles = estEnseignant
-    ? affectations.filter((a) => a.classe_id === Number(classeId)).map((a) => a.matiere)
+    ? (classesMatieres.find((cm) => cm.classe.id === Number(classeId))?.matieres ?? [])
     : toutesLesMatieres;
 
   const { eleves } = useEleves({ classe_id: classeId ? Number(classeId) : undefined });
@@ -382,9 +383,9 @@ export default function SaisieNotes() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-6 h-6 rounded-full bg-ardoise-light text-ardoise flex items-center justify-center text-xs font-bold shrink-0">
-                            {eleve.prenom[0]}
+                            {eleve.nom[0]}
                           </div>
-                          <span className="font-medium text-charbon">{eleve.prenom} {eleve.nom}</span>
+                          <span className="font-medium text-charbon">{nomAffichage(eleve)}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">

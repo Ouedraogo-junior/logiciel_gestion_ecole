@@ -49,9 +49,10 @@ class EleveController extends Controller
             });
         }
 
+        $tri = $request->input('tri', 'asc') === 'desc' ? 'desc' : 'asc';
         $perPage = min((int) $request->input('per_page', 20), 200);
 
-        return response()->json($query->orderBy('nom')->paginate($perPage));
+        return response()->json($query->orderBy('nom', $tri)->paginate($perPage));
     }
 
     public function store(Request $request)

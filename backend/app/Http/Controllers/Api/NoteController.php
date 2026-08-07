@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Affectation;
+use App\Models\AnneeScolaire;
 use App\Models\Classe;
 use App\Models\Eleve;
+use App\Models\Matiere;
 use App\Models\Note;
 use App\Models\ParametreEcole;
 use App\Models\TypeEvaluation;
@@ -50,14 +53,10 @@ class NoteController extends Controller
         $user = $request->user();
 
         if ($user->role === 'enseignant') {
-            $autorise = DB::table('classe_matiere_enseignant')
-                ->where('classe_id', $validated['classe_id'])
-                ->where('matiere_id', $validated['matiere_id'])
-                ->where('enseignant_id', $user->id)
-                ->exists();
+            $responsable = Affectation::enseignantResponsable($validated['classe_id'], $validated['matiere_id']);
 
-            if (!$autorise) {
-                return response()->json(['message' => "Vous n'êtes pas assigné à cette classe/matière."], 403);
+            if ($responsable !== $user->id) {
+                return response()->json(['message' => "Vous n'êtes pas responsable de cette classe/matière."], 403);
             }
         }
 
@@ -162,5 +161,36 @@ class NoteController extends Controller
         }
 
         return response()->json(['data' => $resultat, 'echelle' => $echelle]);
+    }
+
+    public function mesAffectationsEffectives(Request $request)
+    {
+        $user = $request->user();
+        $anneeActive = AnneeScolaire::where('is_active', true)->first();
+
+        if (!$anneeActive) {
+            return response()->json(['data' => []]);
+        }
+
+        $classesTitulaire = Classe::where('enseignant_titulaire_id', $user->id)
+            ->where('annee_scolaire_id', $anneeActive->id)
+            ->get();
+
+        $classesAffectees = Classe::whereHas('affectations', fn ($q) => $q->where('enseignant_id', $user->id))
+            ->where('annee_scolaire_id', $anneeActive->id)
+            ->get();
+
+        $classes = $classesTitulaire->merge($classesAffectees)->unique('id')->values();
+        $matieres = Matiere::all();
+
+        $resultat = $classes->map(function ($classe) use ($matieres, $user) {
+            $matieresResponsable = $matieres->filter(function ($matiere) use ($classe, $user) {
+                return Affectation::enseignantResponsable($classe->id, $matiere->id) === $user->id;
+            })->values();
+
+            return ['classe' => $classe, 'matieres' => $matieresResponsable];
+        })->filter(fn ($c) => $c['matieres']->isNotEmpty())->values();
+
+        return response()->json(['data' => $resultat]);
     }
 }

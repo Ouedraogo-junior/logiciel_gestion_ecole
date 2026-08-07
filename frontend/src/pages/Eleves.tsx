@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useAnneeActive } from '../hooks/useAnneeActive';
 import { useClasses } from '../hooks/useClasses';
 import { useEleves } from '../hooks/useEleves';
-// import client from '../api/client';
 import { useSoldes } from '../hooks/useSoldes';
+import { nomAffichage } from '../utils/nom';
 
 export default function Eleves() {
   const navigate = useNavigate();
@@ -15,7 +15,8 @@ export default function Eleves() {
   const { classes } = useClasses(anneeActive?.id);
   const [recherche, setRecherche] = useState('');
   const [classeId, setClasseId] = useState<number | undefined>(undefined);
-  const { eleves, total, loading } = useEleves({ recherche: recherche || undefined, classe_id: classeId });
+  const [tri, setTri] = useState<'asc' | 'desc'>('asc');
+  const { eleves, total, loading } = useEleves({ recherche: recherche || undefined, classe_id: classeId, tri });
 
   const { soldes: soldesListe } = useSoldes(classeId, user?.role === 'direction');
   const soldes = useMemo(() => {
@@ -25,7 +26,7 @@ export default function Eleves() {
   }, [soldesListe]);
 
   const estDirection = user?.role === 'direction';
-  const colonnes = ['Matricule', 'Élève', 'Classe', 'Sexe', 'Né(e) le', 'Tuteur', 'Téléphone', ...(estDirection ? ['Paiement'] : []), ''];
+  const colonnes = ['Matricule', 'Nom et prénoms', 'Classe', 'Sexe', 'Né(e) le', 'Tuteur', 'Téléphone', ...(estDirection ? ['Paiement'] : []), ''];
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,7 +45,7 @@ export default function Eleves() {
         )}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-48">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-charbon-light" />
           <input
@@ -64,6 +65,13 @@ export default function Eleves() {
             <option key={c.id} value={c.id}>{c.nom}</option>
           ))}
         </select>
+        <button
+          onClick={() => setTri((t) => (t === 'asc' ? 'desc' : 'asc'))}
+          className="flex items-center gap-1.5 text-sm font-medium px-3 py-2.5 rounded-md border border-border text-charbon-muted hover:bg-gray-50 transition-colors"
+        >
+          {tri === 'asc' ? <ArrowDownAZ size={16} /> : <ArrowUpZA size={16} />}
+          Nom {tri === 'asc' ? 'A→Z' : 'Z→A'}
+        </button>
       </div>
 
       <div className="bg-white rounded-lg border border-border overflow-hidden">
@@ -97,9 +105,9 @@ export default function Eleves() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-ardoise-light text-ardoise flex items-center justify-center text-xs font-bold shrink-0">
-                            {eleve.prenom[0]}{eleve.nom[0]}
+                            {eleve.nom[0]}{eleve.prenom[0]}
                           </div>
-                          <span className="font-medium text-charbon whitespace-nowrap">{eleve.prenom} {eleve.nom}</span>
+                          <span className="font-medium text-charbon whitespace-nowrap">{nomAffichage(eleve)}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">

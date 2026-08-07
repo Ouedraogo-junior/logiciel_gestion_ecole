@@ -155,12 +155,7 @@ class EmploiDuTempsController extends Controller
 
     private function deduireEnseignant(int $classeId, int $matiereId): ?int
     {
-        $affectation = Affectation::where('classe_id', $classeId)->where('matiere_id', $matiereId)->first();
-        if ($affectation) {
-            return $affectation->enseignant_id;
-        }
-
-        return Classe::find($classeId)?->enseignant_titulaire_id;
+        return Affectation::enseignantResponsable($classeId, $matiereId);
     }
 
     private function detecterConflit(array $donnees, ?int $ignorerId = null): ?string

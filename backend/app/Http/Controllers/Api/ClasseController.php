@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AnneeScolaire;
 use App\Models\Classe;
+use App\Models\Inscription;
+use App\Models\ParametreEcole;
+use App\Services\PdfGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -79,6 +83,12 @@ class ClasseController extends Controller
         return response()->json(['data' => $classe, 'message' => 'Classe mise à jour.']);
     }
 
+    public function destroy(Classe $classe)
+    {
+        $classe->delete();
+        return response()->json(['message' => 'Classe supprimée.']);
+    }
+
     public function dupliquer(Request $request)
     {
         $validated = $request->validate([
@@ -114,9 +124,30 @@ class ClasseController extends Controller
         ], 201);
     }
 
-    public function destroy(Classe $classe)
+    public function genererListePdf(Classe $classe)
     {
-        $classe->delete();
-        return response()->json(['message' => 'Classe supprimée.']);
+        $inscriptions = Inscription::where('classe_id', $classe->id)
+            ->whereHas('anneeScolaire', fn ($q) => $q->where('is_active', true))
+            ->with('eleve')
+            ->get()
+            ->sortBy(fn ($i) => $i->eleve->nom)
+            ->values();
+
+        $nomEcole = ParametreEcole::where('cle', 'nom_ecole')->value('valeur') ?? 'École';
+        $logoPath = ParametreEcole::where('cle', 'logo_path')->value('valeur');
+        $anneeActive = AnneeScolaire::where('is_active', true)->first();
+
+        $mpdf = PdfGenerator::depuisVue('classes.liste', [
+            'classe' => $classe,
+            'inscriptions' => $inscriptions,
+            'nomEcole' => $nomEcole,
+            'logoPath' => $logoPath,
+            'anneeScolaire' => $anneeActive,
+        ], ['format' => 'A4']);
+
+        return response($mpdf->Output("liste-{$classe->nom}.pdf", 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="liste-'.$classe->nom.'.pdf"',
+        ]);
     }
 }

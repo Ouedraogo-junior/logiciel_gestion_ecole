@@ -11,7 +11,7 @@ class EnseignantController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::where('role', 'enseignant')->with(['affectations.classe', 'affectations.matiere']);
+        $query = User::where('role', 'enseignant')->with('affectations.classe', 'affectations.matiere', 'classesTitulaire');
 
         if ($request->filled('actif')) {
             $query->where('actif', (bool) $request->actif);
@@ -47,7 +47,7 @@ class EnseignantController extends Controller
     {
         abort_unless($enseignant->role === 'enseignant', 404);
 
-        return response()->json(['data' => $enseignant->load(['affectations.classe', 'affectations.matiere'])]);
+        return response()->json(['data' => $enseignant->load('affectations.classe', 'affectations.matiere', 'classesTitulaire')]);
     }
 
     public function update(Request $request, User $enseignant)

@@ -53,6 +53,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/types-evaluation', [TypeEvaluationController::class, 'store']);
         Route::put('/types-evaluation/{typeEvaluation}', [TypeEvaluationController::class, 'update']);
         Route::get('/notes', [NoteController::class, 'index']);
+        Route::get('/notes/mes-affectations-effectives', [NoteController::class, 'mesAffectationsEffectives']);
         Route::get('/classes/{classe}/moyennes', [NoteController::class, 'moyennesClasse']);
         Route::get('/eleves/{eleve}/moyennes', [NoteController::class, 'moyennes']);
         Route::get('/presences', [PresenceController::class, 'index']);
@@ -127,6 +128,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/parametres-ecole/logo', [ParametreEcoleController::class, 'uploaderLogo']);
             Route::get('/eleves/{eleve}/carte', [CarteScolaireController::class, 'generer']);
             Route::get('/classes/{classe}/cartes', [CarteScolaireController::class, 'genererClasse']);
+            Route::get('/classes/{classe}/liste/pdf', [ClasseController::class, 'genererListePdf']);
 
             Route::get('/eleves/{eleve}/bulletin', [BulletinController::class, 'generer']);
             Route::get('/classes/{classe}/bulletins', [BulletinController::class, 'genererClasse']);

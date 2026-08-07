@@ -8,6 +8,12 @@ export interface EnseignantAffectation {
   coefficient: number;
 }
 
+export interface ClasseTitulaire {
+  id: number;
+  nom: string;
+  niveau: string;
+}
+
 export interface Enseignant {
   id: number;
   nom: string;
@@ -16,6 +22,7 @@ export interface Enseignant {
   telephone_contact: string | null;
   actif: boolean;
   affectations: EnseignantAffectation[];
+  classes_titulaire: ClasseTitulaire[];
 }
 
 export function useEnseignants(actif?: boolean) {

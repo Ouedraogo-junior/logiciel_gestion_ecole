@@ -93,6 +93,22 @@ export default function ClasseDetail() {
     }
   }
 
+  const [genererListeEnCours, setGenererListeEnCours] = useState(false);
+  const [erreurListe, setErreurListe] = useState<string | null>(null);
+
+  async function handleGenererListe() {
+    if (!classe) return;
+    setErreurListe(null);
+    setGenererListeEnCours(true);
+    try {
+      await genererEtOuvrirPdf(`/classes/${classe.id}/liste/pdf`);
+    } catch (err) {
+      setErreurListe(err instanceof Error ? err.message : 'Erreur lors de la génération.');
+    } finally {
+      setGenererListeEnCours(false);
+    }
+  }
+
   if (loading) return <p className="text-sm text-charbon-muted">Chargement...</p>;
   if (!classe) return <p className="text-sm text-terracotta">Classe introuvable.</p>;
 
@@ -170,6 +186,21 @@ export default function ClasseDetail() {
           </button>
         </div>
         {erreurCartes && <p className="text-xs text-terracotta max-w-md">{erreurCartes}</p>}
+
+
+        <div className="pt-4 border-t border-border flex items-center justify-between flex-wrap gap-2">
+          <span className="text-sm font-semibold text-charbon">Liste de classe</span>
+          <button
+            onClick={handleGenererListe}
+            disabled={genererListeEnCours}
+            className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border border-ardoise text-ardoise hover:bg-ardoise-light transition-colors disabled:opacity-50"
+          >
+            <FileText size={16} />
+            {genererListeEnCours ? 'Génération...' : 'Imprimer la liste'}
+          </button>
+        </div>
+        {erreurListe && <p className="text-xs text-terracotta max-w-md">{erreurListe}</p>}
+
 
         <div className="pt-4 border-t border-border flex items-center justify-between flex-wrap gap-2">
           <span className="text-sm font-semibold text-charbon">Bulletins de la classe</span>

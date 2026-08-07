@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, X } from 'lucide-react';
 import client from '../api/client';
 import { getErrorMessage } from '../api/errors';
 import { useEnseignant } from '../hooks/useEnseignant';
@@ -76,6 +76,51 @@ export default function EnseignantDetail() {
     },
   });
 
+  // --- Titulariat de classe ---
+  const [classeATitulariser, setClasseATitulariser] = useState('');
+  const [erreurTitulariat, setErreurTitulariat] = useState<string | null>(null);
+
+  const designerTitulaireMutation = useMutation({
+    mutationFn: async (classeId: number) => {
+      const { data } = await client.patch(`/classes/${classeId}`, { enseignant_titulaire_id: Number(id) });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enseignant', id] });
+      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'classes' });
+      setClasseATitulariser('');
+      setErreurTitulariat(null);
+    },
+    onError: (err) => setErreurTitulariat(getErrorMessage(err)),
+  });
+
+  const retirerTitulariatMutation = useMutation({
+    mutationFn: async (classeId: number) => {
+      const { data } = await client.patch(`/classes/${classeId}`, { enseignant_titulaire_id: null });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enseignant', id] });
+      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'classes' });
+    },
+  });
+
+  function handleDesignerTitulaire() {
+    setErreurTitulariat(null);
+    if (!classeATitulariser) return;
+
+    const classeCible = classes.find((c) => c.id === Number(classeATitulariser));
+    if (classeCible?.enseignant_titulaire && classeCible.enseignant_titulaire.id !== Number(id)) {
+      const confirme = window.confirm(
+        `${classeCible.nom} a déjà un titulaire (${classeCible.enseignant_titulaire.prenom} ${classeCible.enseignant_titulaire.nom}). Le remplacer par ${enseignant?.prenom} ${enseignant?.nom} ?`
+      );
+      if (!confirme) return;
+    }
+
+    designerTitulaireMutation.mutate(Number(classeATitulariser));
+  }
+
+  // --- Affectations spécialisées ---
   const [classeAffectation, setClasseAffectation] = useState('');
   const [matiereAffectation, setMatiereAffectation] = useState('');
   const [coefficient, setCoefficient] = useState('1');
@@ -161,6 +206,50 @@ export default function EnseignantDetail() {
       </div>
 
       <div className="bg-white rounded-lg border border-border p-6">
+        <h2 className="font-semibold text-sm text-ardoise font-display mb-2">Titulaire de</h2>
+        <p className="text-sm text-charbon-muted mb-4">
+          Un titulaire enseigne toutes les matières de sa classe par défaut — pas besoin d'affectation en plus.
+        </p>
+
+        {enseignant.classes_titulaire.length === 0 ? (
+          <p className="text-sm text-charbon-muted mb-4">N'est titulaire d'aucune classe actuellement.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {enseignant.classes_titulaire.map((c) => (
+              <span key={c.id} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-foret-light text-foret">
+                {c.nom} ({c.niveau})
+                <button
+                  onClick={() => window.confirm(`Retirer ${enseignant.prenom} ${enseignant.nom} du titulariat de ${c.nom} ?`) && retirerTitulariatMutation.mutate(c.id)}
+                  className="hover:text-terracotta"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-end gap-3 flex-wrap">
+          <div>
+            <label className="block text-xs font-medium mb-1.5 text-charbon-muted">Désigner comme titulaire de</label>
+            <select value={classeATitulariser} onChange={(e) => setClasseATitulariser(e.target.value)}
+              className="border border-border rounded-md px-3 py-2 text-sm text-charbon bg-white min-w-[180px]">
+              <option value="">Sélectionner une classe</option>
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.nom}{c.enseignant_titulaire ? ' (a déjà un titulaire)' : ''}</option>)}
+            </select>
+          </div>
+          <button
+            onClick={handleDesignerTitulaire}
+            disabled={!classeATitulariser || designerTitulaireMutation.isPending}
+            className="bg-terracotta hover:bg-terracotta-hover text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {designerTitulaireMutation.isPending ? 'Enregistrement...' : 'Désigner'}
+          </button>
+        </div>
+        {erreurTitulariat && <p className="text-xs font-medium px-3 py-2 rounded bg-terracotta-light text-terracotta mt-3">{erreurTitulariat}</p>}
+      </div>
+
+      <div className="bg-white rounded-lg border border-border p-6">
         <h2 className="font-semibold text-sm text-ardoise font-display mb-4">Informations</h2>
         <form onSubmit={handleSubmitInfos} className="flex flex-col gap-4 max-w-xl">
           <div className="grid grid-cols-2 gap-4">
@@ -236,10 +325,13 @@ export default function EnseignantDetail() {
       </div>
 
       <div className="bg-white rounded-lg border border-border p-6">
-        <h2 className="font-semibold text-sm text-ardoise font-display mb-4">Affectations classe / matière</h2>
+        <h2 className="font-semibold text-sm text-ardoise font-display mb-2">Affectations spécialisées</h2>
+        <p className="text-sm text-charbon-muted mb-4">
+          Utile uniquement pour un enseignant spécialiste sur une matière précise (sport, anglais...) dans une classe où il n'est pas titulaire.
+        </p>
 
         {enseignant.affectations.length === 0 ? (
-          <p className="text-sm text-charbon-muted mb-4">Aucune affectation pour le moment.</p>
+          <p className="text-sm text-charbon-muted mb-4">Aucune affectation spécialisée.</p>
         ) : (
           <div className="flex flex-col gap-2 mb-5">
             {enseignant.affectations.map((a) => (

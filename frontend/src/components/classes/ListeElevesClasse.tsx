@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEleves } from '../../hooks/useEleves';
+import { nomAffichage } from '../../utils/nom';
 import ListSkeleton from '../ui/ListSkeleton';
 
 export default function ListeElevesClasse({ classeId }: { classeId: number }) {
@@ -24,10 +25,10 @@ export default function ListeElevesClasse({ classeId }: { classeId: number }) {
             >
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-ardoise-light text-ardoise flex items-center justify-center text-xs font-bold shrink-0">
-                  {eleve.prenom[0]}{eleve.nom[0]}
+                  {eleve.nom[0]}{eleve.prenom[0]}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-charbon">{eleve.prenom} {eleve.nom}</p>
+                  <p className="text-sm font-medium text-charbon">{nomAffichage(eleve)}</p>
                   <p className="text-xs text-charbon-muted">{eleve.matricule}</p>
                 </div>
               </div>

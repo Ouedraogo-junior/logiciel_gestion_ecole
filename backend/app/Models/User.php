@@ -23,4 +23,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Affectation::class, 'enseignant_id');
     }
+
+    public function classesTitulaire()
+    {
+        return $this->hasMany(Classe::class, 'enseignant_titulaire_id');
+    }
 }

@@ -6,6 +6,7 @@ interface Filtres {
   classe_id?: number;
   recherche?: string;
   per_page?: number;
+  tri?: 'asc' | 'desc';
 }
 
 export function useEleves(filtres: Filtres) {

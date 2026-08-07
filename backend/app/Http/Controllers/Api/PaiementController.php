@@ -94,9 +94,13 @@ class PaiementController extends Controller
 
     public function solde(Request $request, Eleve $eleve)
     {
-        $anneeActive = AnneeScolaire::where('is_active', true)->firstOrFail();
-        $niveau = $eleve->inscriptionActuelle()->with('classe')->first()?->classe?->niveau;
+        $anneeActive = AnneeScolaire::where('is_active', true)->first();
 
+        if (!$anneeActive) {
+            return response()->json(['data' => ['total_du' => 0, 'total_paye' => 0, 'solde_restant' => 0]]);
+        }
+
+        $niveau = $eleve->inscriptionActuelle()->with('classe')->first()?->classe?->niveau;
         $echeances = $this->echeancesPourNiveau($anneeActive->id, $niveau);
 
         $paiementsParEcheance = Paiement::where('eleve_id', $eleve->id)
@@ -121,7 +125,11 @@ class PaiementController extends Controller
 
     public function soldes(Request $request)
     {
-        $anneeActive = AnneeScolaire::where('is_active', true)->firstOrFail();
+        $anneeActive = AnneeScolaire::where('is_active', true)->first();
+
+        if (!$anneeActive) {
+            return response()->json(['data' => []]);
+        }
 
         $query = Inscription::whereHas('anneeScolaire', fn ($q) => $q->where('is_active', true))->with('classe:id,niveau');
         if ($request->filled('classe_id')) {
@@ -160,7 +168,11 @@ class PaiementController extends Controller
 
     public function retards(Request $request)
     {
-        $anneeActive = AnneeScolaire::where('is_active', true)->firstOrFail();
+        $anneeActive = AnneeScolaire::where('is_active', true)->first();
+
+        if (!$anneeActive) {
+            return response()->json(['data' => []]);
+        }
 
         $elevesInscrits = Inscription::whereHas('anneeScolaire', fn ($q) => $q->where('is_active', true))
             ->with(['eleve:id,nom,prenom,matricule', 'classe:id,niveau'])

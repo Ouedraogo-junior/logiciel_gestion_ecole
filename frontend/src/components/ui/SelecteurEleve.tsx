@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { useEleves } from '../../hooks/useEleves';
+import { nomAffichage } from '../../utils/nom';
 import type { Eleve } from '../../types';
 
 interface Props {
@@ -42,7 +43,7 @@ export default function SelecteurEleve({ value, onChange, classeId }: Props) {
       {value ? (
         <div className="flex items-center justify-between border border-border rounded-md px-3 py-2.5 text-sm bg-white">
           <span className="text-charbon font-medium">
-            {value.prenom} {value.nom} — {value.matricule}
+            {nomAffichage(value)} — {value.matricule}
           </span>
           <button type="button" onClick={effacer} className="text-charbon-light hover:text-terracotta">
             <X size={16} />
@@ -75,7 +76,7 @@ export default function SelecteurEleve({ value, onChange, classeId }: Props) {
                 onClick={() => choisir(eleve)}
                 className="w-full text-left px-3 py-2.5 text-sm hover:bg-ardoise-light transition-colors flex items-center justify-between gap-3"
               >
-                <span className="text-charbon">{eleve.prenom} {eleve.nom}</span>
+                <span className="text-charbon">{nomAffichage(eleve)}</span>
                 <span className="text-xs text-charbon-muted whitespace-nowrap">
                   {eleve.matricule} — {eleve.inscription_actuelle?.classe?.nom ?? '—'}
                 </span>

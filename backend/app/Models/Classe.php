@@ -35,4 +35,9 @@ class Classe extends Model
         return $this->hasMany(Inscription::class);
     }
 
+    public function affectations()
+    {
+        return $this->hasMany(Affectation::class);
+    }
+
 }
