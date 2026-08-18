@@ -26,9 +26,14 @@ use App\Http\Controllers\Api\RecuController;
 use App\Http\Controllers\Api\BulletinController;
 use App\Http\Controllers\Api\ExamenNationalController;
 use App\Http\Controllers\Api\EmploiDuTempsController;
+use App\Http\Controllers\Api\DemoLoginController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+
+    if (config('app.demo_mode')) {
+        Route::post('/demo-login', [DemoLoginController::class, 'login']);
+    }
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
